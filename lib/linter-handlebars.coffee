@@ -24,4 +24,4 @@ class LinterHandlebars extends Linter
     super(editor)
     @executablePath = path.join __dirname, '..', 'node_modules', 'handlebars', 'bin'
 
-module.exports = Linterhandlebars
+module.exports = LinterHandlebars
