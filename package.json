@@ -1,0 +1,15 @@
+{
+  "name": "linter-handlebars",
+  "main": "./lib/init",
+  "version": "0.0.0",
+  "description": "Lint `handlebars` on the fly, using handlebars",
+  "linter-package": true,
+  "repository": "https://github.com/AtomLinter/linter-handlebars",
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.50.0"
+  },
+  "dependencies": {
+    "handlebars": "^2.0.0"
+  }
+}
