@@ -1,7 +1,7 @@
 {
   "name": "linter-handlebars",
   "main": "./lib/init",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Lint `handlebars` on the fly, using handlebars",
   "linter-package": true,
   "repository": "https://github.com/AtomLinter/linter-handlebars",
