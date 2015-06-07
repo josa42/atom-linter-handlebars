@@ -1,19 +1,22 @@
 fs = require 'fs'
 path = require 'path'
-{CompositeDisposable, Range, Point, BufferedProcess} = require 'atom'
+
+{CompositeDisposable, Point, BufferedProcess} = require 'atom'
 _ = null
 XRegExp = null
-{MessagePanelView} = require 'atom-message-panel'
-{log, warn} = require './utils'
+# {MessagePanelView} = require 'atom-message-panel'
+# {log, warn} = require './utils'
 
 
 # Public: The base class for linters.
 # Subclasses must at a minimum define the attributes syntax, cmd, and regex.
 class LinterBase
 
-  # The syntax that the linter handles. May be a string or
-  # list/tuple of strings. Names should be all lowercase.
-  @syntax: ''
+  scopes: null
+
+  scope: 'file'
+
+  lintOnFly: false
 
   # A string or array containing the command line (with arguments) used to
   # lint.
@@ -55,8 +58,7 @@ class LinterBase
   options: []
 
   # Public: Construct a linter passing it's base editor
-  constructor: (@editor) ->
-    @cwd = path.dirname(@editor.getPath())
+  constructor: () ->
 
     @subscriptions = new CompositeDisposable
 
@@ -68,13 +70,28 @@ class LinterBase
 
     @_statCache = new Map()
 
+  @provideLinter: -> new @()
+
+  @activate: ->
+    console.log "activate linter-#{@linterName}" if atom.inDevMode()
+
+    if not atom.packages.getLoadedPackage 'linter'
+      atom.notifications.addError """
+        [linter-#{@linterName}] `linter` package not found, please install it
+      """
+
+  lint: (textEditor, textBuffer) ->
+
+    return new Promise (resolve, reject) =>
+      @lintFile textEditor, resolve
+
   observeOption: (prefix, option) ->
     callback = @updateOption.bind(this, prefix, option)
     @subscriptions.add atom.config.observe "#{prefix}.#{option}", callback
 
   updateOption: (prefix, option) =>
     @[option] = atom.config.get "#{prefix}.#{option}"
-    log "Updating `#{prefix}` #{option} to #{@[option]}"
+    # console.log "Updating `#{prefix}` #{option} to #{@[option]}"
 
   destroy: ->
     @subscriptions.dispose()
@@ -121,7 +138,7 @@ class LinterBase
       else
         return cmd_item
 
-    log 'command and arguments', cmd_list
+    # console.log 'command and arguments', cmd_list
 
     {
       command: cmd_list[0],
@@ -140,25 +157,28 @@ class LinterBase
   #         processMessage in order to handle standard output
   #
   # Override this if you don't intend to use base command execution logic
-  lintFile: (filePath, callback) ->
+  lintFile: (textEditor, callback) ->
+
+    filePath = textEditor.getPath()
+
     # build the command with arguments to lint the file
     {command, args} = @getCmdAndArgs(filePath)
 
-    log 'is node executable: ' + @isNodeExecutable
+    # console.log 'is node executable: ' + @isNodeExecutable
 
     # options for BufferedProcess, same syntax with child_process.spawn
-    options = {cwd: @cwd}
+    options = {cwd: path.dirname(textEditor.getPath())}
 
     dataStdout = []
     dataStderr = []
     exited = false
 
     stdout = (output) ->
-      log 'stdout', output
+      console.log 'stdout', output
       dataStdout += output
 
     stderr = (output) ->
-      warn 'stderr', output
+      console.warn 'stderr', output
       dataStderr += output
 
     exit = =>
@@ -170,41 +190,23 @@ class LinterBase
             data = fs.readFileSync(reportFilePath)
         when 'stdout' then data = dataStdout
         else data = dataStderr
-      @processMessage data, callback
+      @processMessage textEditor, data, callback
 
     {command, args, options} = @beforeSpawnProcess(command, args, options)
-    log("beforeSpawnProcess:", command, args, options)
+    # console.log("beforeSpawnProcess:", command, args, options)
 
     process = new BufferedProcess({command, args, options,
                                   stdout, stderr, exit})
     process.onWillThrowError (err) =>
-      return unless err?
-      if err.error.code is 'ENOENT'
-        ignored = atom.config.get('linter.ignoredLinterErrors')
-        subtle = atom.config.get('linter.subtleLinterErrors')
-        warningMessageTitle = "The linter binary '#{@linterName}' cannot be found."
-        if @linterName in subtle
-          # Show a small notification at the bottom of the screen
-          message = new MessagePanelView(title: warningMessageTitle)
-          message.attach()
-          message.toggle() # Fold the panel
-        else if @linterName not in ignored
-          # Prompt user, ask if they want to fully or partially ignore warnings
-          atom.confirm
-            message: warningMessageTitle
-            detailedMessage: 'Is it on your path? Please follow the installation
-            guide for your linter. Would you like further notifications to be
-            fully or partially suppressed? You can change this later in the
-            linter package settings.'
-            buttons:
-              Fully: =>
-                ignored.push @linterName
-                atom.config.set('linter.ignoredLinterErrors', ignored)
-              Partially: =>
-                subtle.push @linterName
-                atom.config.set('linter.subtleLinterErrors', subtle)
-        else
-          console.log warningMessageTitle
+      if err and err.error.code is 'ENOENT'
+        atom.notifications.addError """
+          <b>The linter binary '#{@linterName}' cannot be found.</b>
+
+          Is it on your path? Please follow the installation
+          guide for your linter. Would you like further notifications to be
+          fully or partially suppressed? You can change this later in the
+          linter package settings.'
+        """
         err.handle()
 
     # Kill the linter process if it takes too long
@@ -230,13 +232,13 @@ class LinterBase
   #
   # Override this in order to handle message processing in a different manner
   # for instance if the linter returns json or xml data
-  processMessage: (message, callback) ->
+  processMessage: (textEditor, message, callback) ->
     messages = []
     XRegExp ?= require('xregexp').XRegExp
     regex = XRegExp @regex, @regexFlags
     XRegExp.forEach message, regex, (match, i) =>
-      msg = @createMessage match
-      messages.push msg if msg.range?
+      msg = @createMessage textEditor, match
+      messages.push msg
     , this
     callback messages
 
@@ -252,15 +254,12 @@ class LinterBase
   #        (optional)
   #   colStart: column to on which to start a higlight (optional)
   #   colEnd: column to end highlight (optional)
-  createMessage: (match) ->
-    if match.error
-      level = 'error'
-    else if match.warning
-      level = 'warning'
-    else if match.info
-      level = 'info'
+  createMessage: (textEditor, match) ->
+    if match.warning or match.info
+      level = 'Warning'
     else
-      level = match.level or 'error'
+      level = 'Error'
+
 
     # If no line/col is found, assume a full file error
     # TODO: This conflicts with the docs above that say line is required :(
@@ -268,15 +267,12 @@ class LinterBase
     match.col ?= 0
 
     return {
-      # TODO: It's confusing that line & col are here since they duplicate info
-      # that's present in the value for range. Consider deprecating line & col
-      # since they're less general than range.
-      line: match.line,
-      col: match.col,
-      level: level,
-      message: @formatMessage(match),
-      linter: @linterName,
-      range: @computeRange match
+      type: level
+      message: @formatMessage(match)
+      # html: ?String,
+      file: textEditor.getPath()
+      position: @computeRange textEditor, match
+      # trace: ?array<Trace>
     }
 
   # Public: This is the method to override if you want to set a custom message
@@ -286,21 +282,21 @@ class LinterBase
   formatMessage: (match) ->
     match.message
 
-  lineLengthForRow: (row) ->
-    text = @editor.lineTextForBufferRow row
+  lineLengthForRow: (textEditor, row) ->
+    text = textEditor.lineTextForBufferRow row
     return text?.length or 0
 
-  getEditorScopesForPosition: (position) ->
+  getEditorScopesForPosition: (textEditor, position) ->
     _ ?= require 'lodash'
     try
       # return a copy in case it gets mutated (hint: it does)
-      _.clone @editor.displayBuffer.tokenizedBuffer.scopesForPosition(position)
+      _.clone textEditor.displayBuffer.tokenizedBuffer.scopesForPosition(position)
     catch
       # this can throw if the line has since been deleted
       []
 
-  getGetRangeForScopeAtPosition: (innerMostScope, position) ->
-    return @editor
+  getGetRangeForScopeAtPosition: (textEditor, innerMostScope, position) ->
+    return textEditor
       .displayBuffer
         .tokenizedBuffer
           .bufferRangeForScopeAtPosition(innerMostScope, position)
@@ -323,26 +319,29 @@ class LinterBase
   #        (optional)
   #   colStart: column to on which to start a higlight (optional)
   #   colEnd: column to end highlight (optional)
-  computeRange: (match) ->
+  computeRange: (textEditor, match) ->
 
     decrementParse = (x) ->
-      Math.max 0, parseInt(x) - 1
+      Math.max 1, parseInt(x)
 
     rowStart = decrementParse match.lineStart ? match.line
     rowEnd = decrementParse match.lineEnd ? match.line ? rowStart
 
+    if rowStart is 0 and rowEnd is 0
+      return null
+
     # if this message purports to be from beyond the maximum line count,
     # ignore it
-    if rowEnd >= @editor.getLineCount()
-      log "ignoring #{match} - it's longer than the buffer"
+    if rowEnd >= textEditor.getLineCount()
+      # console.log "ignoring #{match} - it's longer than the buffer"
       return null
 
     unless match.colStart
       position = new Point(rowStart, match.col)
-      scopes = @getEditorScopesForPosition(position)
+      scopes = @getEditorScopesForPosition(textEditor, position)
 
       while innerMostScope = scopes.pop()
-        range = @getGetRangeForScopeAtPosition(innerMostScope, position)
+        range = @getGetRangeForScopeAtPosition(textEditor, innerMostScope, position)
         return range if range?
 
     match.colStart ?= match.col
@@ -350,15 +349,15 @@ class LinterBase
     colEnd = if match.colEnd?
       decrementParse match.colEnd
     else
-      parseInt @lineLengthForRow(rowEnd)
+      parseInt @lineLengthForRow(textEditor, rowEnd)
 
     # if range has no width, nudge the start back one column
     colStart = decrementParse colStart if colStart is colEnd
 
-    return new Range(
+    return [
       [rowStart, colStart],
       [rowEnd, colEnd]
-    )
+    ]
 
 
-module.exports = Linter
+module.exports = LinterBase

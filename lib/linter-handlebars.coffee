@@ -1,10 +1,11 @@
-linterPath = atom.packages.getLoadedPackage("linter").path
-Linter = require "#{linterPath}/lib/linter"
+LinterBase = require "./linter-base"
 path = require 'path'
 
-class LinterHandlebars extends Linter
+class LinterHandlebars extends LinterBase
 
-  @syntax: ['text.html.handlebars', 'source.hbs', 'source.handlebars']
+  scopes: ['text.html.handlebars', 'source.hbs', 'source.handlebars']
+
+  lintOnFly: false
 
   isNodeExecutable: yes
 
@@ -20,8 +21,8 @@ class LinterHandlebars extends Linter
       '[^\n]*\n' +
       '(?<message>.*)\n'
 
-  constructor: (editor)->
-    super(editor)
-    @executablePath = path.join __dirname, '..', 'node_modules', 'handlebars', 'bin'
+  constructor: () ->
+    @executablePath = path.join __dirname, '..', 'node_modules', '.bin'
+    super()
 
 module.exports = LinterHandlebars
