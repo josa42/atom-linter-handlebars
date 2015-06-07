@@ -5,6 +5,9 @@
   "description": "Lint `handlebars` on the fly, using handlebars",
   "repository": "https://github.com/AtomLinter/linter-handlebars",
   "license": "MIT",
+  "scripts": {
+    "lint": "coffeelint lib"
+  },
   "engines": {
     "atom": ">0.50.0"
   },
