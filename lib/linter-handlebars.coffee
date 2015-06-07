@@ -32,19 +32,33 @@ class LinterHandlebars
     return new Promise (resolve, reject) =>
 
       messages = []
+      bufferText = textBuffer.cachedText
 
       try
-        Handlebars.precompile(textBuffer.cachedText, {})
+        Handlebars.precompile bufferText, {}
 
       catch err
         XRegExp.forEach err.message, @regex, (match) =>
+
+          range = @lineRange match.line, bufferText
+
           messages.push {
             type: 'Error'
             message: match.message
             file: textEditor.getPath()
-            position: [[match.line, 0], [match.line, 0]]
+            position: [
+              [match.line, range[0]],
+              [match.line, range[1]]
+            ]
           }
 
       resolve(messages)
+
+  lineRange: (lineNo, bufferText) ->
+
+    line = bufferText.split(/\n/)[lineNo - 1] or ''
+    pre = String line.match /^\s*/
+
+    return [pre.length, line.length]
 
 module.exports = LinterHandlebars
