@@ -10,6 +10,7 @@
     "atom": ">0.50.0"
   },
   "dependencies": {
-    "handlebars": "^2.0.0"
+    "handlebars": "^2.0.0",
+    "xregexp": "^2.0.0"
   }
 }
