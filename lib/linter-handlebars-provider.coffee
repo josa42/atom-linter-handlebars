@@ -44,4 +44,4 @@ module.exports =
     line = bufferText.split(/\n/)[lineIdx] or ''
     pre = String line.match /^\s*/
 
-    return [[lineIdx, pre.length], [lineIdx, pre.length]]
+    return [[lineIdx, pre.length], [lineIdx, line.length]]
