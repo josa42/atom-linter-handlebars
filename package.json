@@ -12,7 +12,7 @@
     "atom": ">0.50.0"
   },
   "dependencies": {
-    "handlebars": "^2.0.0",
+    "handlebars": "^3.0.3",
     "xregexp": "^2.0.0"
   },
   "providedServices": {
