@@ -12,9 +12,13 @@
     "atom": ">0.50.0"
   },
   "dependencies": {
+    "atom-package-deps": "^2.1.3",
     "handlebars": "^3.0.3",
     "xregexp": "^2.0.0"
   },
+  "package-deps": [
+    "linter"
+  ],
   "providedServices": {
     "linter": {
       "versions": {
