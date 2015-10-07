@@ -4,6 +4,8 @@ XRegExp = require('xregexp').XRegExp
 
 module.exports =
 
+  name: 'handlebars'
+
   grammarScopes: ['text.html.handlebars', 'source.hbs', 'source.handlebars']
 
   scope: 'file'
