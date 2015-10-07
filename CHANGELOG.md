@@ -1,5 +1,6 @@
 ## 2.2.0
 * Automatically install linter package
+* Add name to provider
 
 ## 2.1.0
 * Update handlebars to 3
