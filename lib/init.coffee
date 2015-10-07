@@ -1,14 +1,11 @@
 LinterHandlebarsProvider = require './linter-handlebars-provider'
-
+packageDeps = require 'atom-package-deps'
 
 module.exports =
 
   activate: ->
-    console.log "activate linter-handlebars" # if atom.inDevMode()
+    console.log "activate linter-handlebars" if atom.inDevMode()
 
-    if not atom.packages.getLoadedPackage 'linter'
-      atom.notifications.addError """
-        [linter-handlebars] `linter` package not found, please install it.
-      """
+    packageDeps.install 'linter-handlebars'
 
   provideLinter: -> LinterHandlebarsProvider
