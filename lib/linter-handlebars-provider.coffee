@@ -1,5 +1,6 @@
 path = require 'path'
 Handlebars = require 'handlebars'
+helpers = require 'atom-linter'
 XRegExp = require('xregexp').XRegExp
 
 module.exports =
@@ -30,20 +31,13 @@ module.exports =
         Handlebars.precompile bufferText, {}
 
       catch err
-        XRegExp.forEach err.message, @regex, (match) =>
+        XRegExp.forEach err.message, @regex, (match) ->
 
           messages.push {
             type: 'Error'
             text: match.message
             filePath: textEditor.getPath()
-            range: @lineRange match.line - 1, bufferText
+            range: helpers.rangeFromLineNumber(textEditor, match.line - 1)
           }
 
       resolve(messages)
-
-  lineRange: (lineIdx, bufferText) ->
-
-    line = bufferText.split(/\n/)[lineIdx] or ''
-    pre = String line.match /^\s*/
-
-    return [[lineIdx, pre.length], [lineIdx, line.length]]
