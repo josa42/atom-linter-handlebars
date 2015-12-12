@@ -1,3 +1,7 @@
+## 2.2.1
+* Update handlebars to v4
+* Better line highlighting (No longer broken on CRLF files)
+
 ## 2.2.0
 * Automatically install linter package
 * Add name to provider
