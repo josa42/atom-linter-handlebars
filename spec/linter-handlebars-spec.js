@@ -26,5 +26,17 @@ describe("Lint handlebars", () => {
           })
       })
     })
+
+    it('retuns one error (CRFL)', () => {
+      waitsForPromise(() => {
+        return atom.workspace.open(path.join(__dirname, 'files', 'error-missing-open-crfl.hbs'))
+          .then((editor) => LinterHandlebarsProvider.lint(editor))
+          .then((messages) => {
+            expect(messages.length).toEqual(1)
+            expect(messages[0].text).toEqual("Expecting 'EOF', got 'OPEN_ENDBLOCK'")
+            expect(messages[0].range).toEqual([[2, 0], [2, 7]])
+          })
+      })
+    })
   })
 })
