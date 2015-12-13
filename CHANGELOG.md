@@ -1,3 +1,6 @@
+## 2.3.0
+* Convert to JS
+
 ## 2.2.1
 * Update handlebars to v4
 * Better line highlighting (No longer broken on CRLF files)
