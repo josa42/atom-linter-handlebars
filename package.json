@@ -6,7 +6,7 @@
   "repository": "https://github.com/josa42/atom-linter-handlebars",
   "license": "MIT",
   "scripts": {
-    "lint": "coffeelint lib"
+    "lint": "eslint lib"
   },
   "engines": {
     "atom": ">0.50.0"
@@ -27,6 +27,7 @@
     }
   },
   "devDependencies": {
-    "babel-eslint": "^4.1.6"
+    "babel-eslint": "^4.1.6",
+    "eslint": "^1.10.3"
   }
 }
