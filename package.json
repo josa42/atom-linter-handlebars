@@ -1,7 +1,7 @@
 {
   "name": "linter-handlebars",
   "main": "./lib/init",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Lint `handlebars` on the fly, using handlebars",
   "repository": "https://github.com/josa42/atom-linter-handlebars",
   "license": "MIT",
