@@ -1,0 +1,9 @@
+{
+  "globals": {
+    "expect": true
+  },
+  "env": {
+    "atomtest": true,
+    "mocha": true
+  }
+}

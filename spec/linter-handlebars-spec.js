@@ -1,11 +1,10 @@
-"use babel"
+'use babel'
 
 import path from 'path'
 import { resetConfig } from './test-helper'
 import LinterHandlebarsProvider from '../lib/linter-handlebars-provider'
 
-describe("Lint handlebars", () => {
-
+describe('Lint handlebars', () => {
   beforeEach(() => {
     resetConfig()
     atom.workspace.destroyActivePaneItem()
@@ -14,7 +13,7 @@ describe("Lint handlebars", () => {
     })
   })
 
-  describe("checks a file with a missing open block", () => {
+  describe('checks a file with a missing open block', () => {
     it('retuns one error', () => {
       waitsForPromise(() => {
         return atom.workspace.open(path.join(__dirname, 'files', 'error-missing-open.hbs'))
