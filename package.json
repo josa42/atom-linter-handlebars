@@ -1,12 +1,12 @@
 {
   "name": "linter-handlebars",
   "main": "./lib/init",
-  "version": "2.3.4",
+  "version": "2.4.0",
   "description": "Lint `handlebars` on the fly, using handlebars",
   "repository": "https://github.com/josa42/atom-linter-handlebars",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint '**/*.js'"
+    "lint": "eslint ."
   },
   "engines": {
     "atom": ">0.50.0"
@@ -33,8 +33,5 @@
     "eslint-plugin-node": "^5.0.0",
     "eslint-plugin-promise": "^3.5.0",
     "eslint-plugin-standard": "^3.0.1"
-  },
-  "scripts": {
-    "lint": "eslint ."
   }
 }
